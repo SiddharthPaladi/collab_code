@@ -7,10 +7,16 @@ const cn = (...classes) => {
   return classes.filter(Boolean).join(" ");
 };
 
-const PlaceholdersAndVanishInput = ({ placeholders, onChange, onSubmit }) => {
+const PlaceholdersAndVanishInput = ({ value: externalValue, placeholders, onChange, onSubmit, onKeyDown }) => {
   const [currentPlaceholder, setCurrentPlaceholder] = useState(0);
-  const [value, setValue] = useState("");
+  const [value, setValue] = useState(externalValue || "");
   const [animating, setAnimating] = useState(false);
+
+  useEffect(() => {
+    if (externalValue !== undefined) {
+      setValue(externalValue);
+    }
+  }, [externalValue]);
 
   const intervalRef = useRef(null);
   const canvasRef = useRef(null);
@@ -171,10 +177,17 @@ const PlaceholdersAndVanishInput = ({ placeholders, onChange, onSubmit }) => {
     vanishAndSubmit();
   };
 
+  const adjustHeight = (el) => {
+    if (el) {
+      el.style.height = 'auto';
+      el.style.height = `${Math.min(el.scrollHeight, 200)}px`; // Max height 200px
+    }
+  };
+
   return (
     <form
       className={cn(
-        "w-full relative bg-gray-800/50 h-12 rounded-full overflow-hidden shadow-lg transition duration-200",
+        "w-full relative bg-gray-800/50 min-h-[48px] rounded-3xl overflow-hidden shadow-lg transition duration-200",
         value && "bg-gray-700/70"
       )}
       onSubmit={handleSubmit}
@@ -186,50 +199,50 @@ const PlaceholdersAndVanishInput = ({ placeholders, onChange, onSubmit }) => {
         )}
         ref={canvasRef}
       />
-      <input
+      <textarea
         onChange={(e) => {
           if (!animating) {
             setValue(e.target.value);
+            adjustHeight(e.target);
             onChange && onChange(e);
           }
         }}
-        onKeyDown={handleKeyDown}
-        ref={inputRef}
+        onKeyDown={(e) => {
+          if (onKeyDown) onKeyDown(e);
+          if (e.key === "Enter" && !e.shiftKey && !animating && !e.defaultPrevented) {
+            e.preventDefault();
+            vanishAndSubmit();
+          }
+        }}
+        ref={(el) => {
+          inputRef.current = el;
+          if (el && !value) {
+            el.style.height = '48px'; // reset height when empty
+          }
+        }}
         value={value}
-        type="text"
+        rows={1}
         className={cn(
-          "w-full relative text-base z-50 border-none text-gray-100 bg-transparent h-full rounded-full focus:outline-none focus:ring-0 pl-4 pr-14 font-inter",
+          "w-full relative text-base z-50 border-none text-gray-100 bg-transparent min-h-[48px] max-h-[200px] resize-none focus:outline-none focus:ring-0 pl-4 pr-14 py-3 font-inter custom-scrollbar",
           animating && "text-transparent"
         )}
       />
       <button
         disabled={!value}
         type="submit"
-        className="absolute right-2 top-1/2 z-50 -translate-y-1/2 h-8 w-8 rounded-full disabled:bg-gray-700 bg-cyan-600 disabled:opacity-50 transition duration-200 flex items-center justify-center"
+        className="absolute right-2 bottom-2 z-50 h-8 w-8 rounded-full disabled:bg-gray-700 bg-cyan-600 disabled:opacity-50 transition duration-200 flex items-center justify-center"
       >
         <TbSend className="text-white h-4 w-4" />
       </button>
-      <div className="absolute inset-0 flex items-center rounded-full pointer-events-none">
+      <div className="absolute inset-0 flex items-center h-[48px] rounded-full pointer-events-none">
         <AnimatePresence mode="wait">
           {!value && (
             <motion.p
-              initial={{
-                y: 5,
-                opacity: 0,
-              }}
+              initial={{ y: 5, opacity: 0 }}
               key={`current-placeholder-${currentPlaceholder}`}
-              animate={{
-                y: 0,
-                opacity: 1,
-              }}
-              exit={{
-                y: -15,
-                opacity: 0,
-              }}
-              transition={{
-                duration: 0.3,
-                ease: "linear",
-              }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -15, opacity: 0 }}
+              transition={{ duration: 0.3, ease: "linear" }}
               className="text-gray-400 text-base font-inter pl-4 text-left w-[calc(100%-2rem)] truncate"
             >
               {placeholders[currentPlaceholder]}

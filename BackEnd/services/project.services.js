@@ -55,6 +55,11 @@ export const updateFileTree = async (projectid, fileTree) => {
     if (!project) {
       throw new Error("project not found");
     }
+    
+    // Asynchronously update the vector store for RAG 
+    import('./codeIndexer.js').then(({ updateProjectVectorStore }) => {
+       updateProjectVectorStore(projectid, fileTree);
+    }).catch(err => console.error("Failed to trigger vector store update", err));
 
     return { status: "success", project };
   } catch (error) {

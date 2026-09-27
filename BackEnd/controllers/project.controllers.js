@@ -47,7 +47,7 @@ export const getallprojects = async (req, res) => {
     return res.status(200).send(all_projects);
 
   } catch (error) {
-    res.staus(400).send(err.message);
+    res.status(400).send(error.message);
   }
 
 };

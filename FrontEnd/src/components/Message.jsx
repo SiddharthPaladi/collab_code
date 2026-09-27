@@ -75,10 +75,10 @@ const Message = ({
       {/* Message Container */}
       <div 
         className={`
-          relative max-w-[75%] w-full p-3 rounded-lg shadow-md
+          relative max-w-[75%] w-full p-3 rounded-2xl shadow-md border
           ${isSender 
-            ? 'bg-cyan-700/70 text-white' 
-            : 'bg-gray-700/70 text-gray-200'}
+            ? 'bg-teal-600 border-teal-500 text-white rounded-tr-sm' 
+            : 'bg-slate-700/80 border-slate-600/50 text-slate-200 rounded-tl-sm'}
           transition-all duration-300
         `}
         style={{ minWidth: "100px" }}
@@ -86,8 +86,8 @@ const Message = ({
         {/* Sender Name */}
         <div className="flex justify-between items-center mb-2">
           <span className={`
-            text-xs font-semibold 
-            ${isSender ? 'text-emerald-400' : 'text-gray-400'}
+            text-xs font-bold tracking-wide
+            ${isSender ? 'text-teal-200' : 'text-slate-400'}
           `}>
             {sender}
           </span>
@@ -104,10 +104,10 @@ const Message = ({
               value={editedContent}
               onChange={(e) => setEditedContent(e.target.value)}
               className={`
-                w-full p-2 rounded-md 
+                w-full p-2 rounded-lg 
                 ${isSender 
-                  ? 'bg-cyan-700/70 text-white' 
-                  : 'bg-gray-700/70 text-gray-200'}
+                  ? 'bg-teal-700/70 text-white border border-teal-500/50' 
+                  : 'bg-slate-800/70 text-slate-200 border border-slate-600/50'}
                 focus:outline-none
                 resize-none
                 overflow-hidden
@@ -135,8 +135,8 @@ const Message = ({
 
         {/* Timestamp */}
         <div className={`
-          text-right text-xs opacity-70 mt-2
-          ${isSender ? 'text-indigo-300' : 'text-gray-400'}
+          text-right text-[10px] uppercase font-bold opacity-80 mt-2
+          ${isSender ? 'text-teal-200' : 'text-slate-400'}
         `}>
           {timestamp?.split(',')[1]}
         </div>

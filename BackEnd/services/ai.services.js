@@ -32,6 +32,8 @@ IMPORTANT RULES:
 4. Properly escape all special characters in strings
 5. No trailing commas in objects or arrays
 6. The fileTree structure must match exactly as shown above
+7. CRITICAL DEPENDENCY RULE: If you require/import ANY third-party package in your code (e.g., helmet, morgan, cors, mongoose), you MUST explicitly include it in the "dependencies" object of the generated package.json file. Failure to do so will break the build!
+8. NO MISSING IMPORTS RULE: Every single local file you \`require()\` or \`import\` in your code (e.g., \`./middleware/errorMiddleware\`) MUST be generated and included in the \`fileTree\` response. Do not require a local file if you do not provide its contents! If you require 3 middleware files, you must output all 3 in the fileTree.
 
 # Core Development Principles
 - Write modular, scalable, and maintainable code
@@ -81,16 +83,21 @@ Don't use:
 
 1. For code-related responses:
 {
-    "text": "Here's a basic Express server setup with proper error handling and middleware configuration.",
+    "text": "Here's a basic Express server setup with proper error handling and modular structure.",
     "fileTree": {
+        "server.js": {
+            "file": {
+                "contents": "const app = require('./app');\napp.listen(3000);"
+            }
+        },
         "app.js": {
             "file": {
-                "contents": "const express = require('express');\nconst app = express();"
+                "contents": "const express = require('express');\nconst helmet = require('helmet');\nconst app = express();\napp.use(helmet());\nmodule.exports = app;"
             }
         },
         "package.json": {
             "file": {
-                "contents": "{\n  \"name\": \"project-name\"\n}"
+                "contents": "{\n  \"name\": \"project-name\",\n  \"dependencies\": {\n    \"express\": \"^4.18.2\",\n    \"helmet\": \"^7.0.0\"\n  }\n}"
             }
         }
     },
@@ -100,7 +107,7 @@ Don't use:
     },
     "startCommand": {
         "mainItem": "node",
-        "commands": ["app.js"]
+        "commands": ["server.js"]
     }
 }
 
@@ -118,6 +125,7 @@ Don't use:
 6. Ensure all responses are properly formatted JSON
 7. Include build and start commands when providing code
 8. Always validate input and handle errors appropriately
+9. ALWAYS cross-check your generated package.json to ensure every single required module is listed in dependencies.
 
 Remember: EVERY response must be valid JSON and include at least the "text" field. When sharing code, use the complete fileTree structure with proper escaping.
 it should be a valid json object , because its causing errors while parsing it to display it in the ui , avoid the following error to happen hook.js:608 Error processing message: SyntaxError: Unexpected non-whitespace character after JSON at position 1148 (line 1 column 1149)
@@ -133,7 +141,7 @@ Project.jsx:134 Error processing message: SyntaxError: Expected ',' or '}' after
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_KEY);
 const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-flash",
+    model: "gemini-3.6-flash",
     generationConfig: {
         responseMimeType: "application/json",
         temperature: 0.4,
@@ -141,9 +149,46 @@ const model = genAI.getGenerativeModel({
     systemInstruction: SYSTEM_INSTRUCTION
 });
 
-export const generateResult = async (prompt) => {
-    const result = await model.generateContent(prompt);
-    return result.response.text();
+import { searchProjectCode } from './codeIndexer.js';
+
+export const generateResult = async (prompt, projectId) => {
+    let finalPrompt = prompt;
+
+    if (projectId) {
+        try {
+            // Retrieve up to 5 most relevant code chunks for context
+            const relevantChunks = await searchProjectCode(projectId, prompt, 5);
+            if (relevantChunks && relevantChunks.length > 0) {
+                const contextStr = relevantChunks.map(chunk => 
+                    `--- File: ${chunk.metadata.filePath} ---\n${chunk.pageContent}`
+                ).join('\n\n');
+                
+                finalPrompt = `
+You have been asked the following question/request by the user:
+"${prompt}"
+
+Here is some highly relevant context retrieved from the user's current codebase:
+${contextStr}
+
+Use this context to accurately write, modify, or explain code. Always output in the required JSON format.
+`;
+            }
+        } catch (err) {
+            console.error("[RAG] Failed to inject context for AI generation:", err);
+        }
+    }
+
+    try {
+        const result = await model.generateContent(finalPrompt);
+        return result.response.text();
+    } catch (err) {
+        if (err.message && err.message.includes("429 Too Many Requests")) {
+            return JSON.stringify({
+                text: "I am currently processing too many requests and hit the free tier rate limit. Please wait 15-30 seconds and try your request again."
+            });
+        }
+        throw err;
+    }
 }
 
 
