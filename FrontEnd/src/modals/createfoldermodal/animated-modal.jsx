@@ -42,11 +42,16 @@ export const Modal = ({ children }) => {
 
 export const ModalTrigger = ({ children, className, ...props }) => {
   const { openModal } = useModal();
-  return (
-    <button onClick={openModal} className={className} {...props}>
-      {children}
-    </button>
-  );
+  const child = React.Children.only(children);
+
+  return React.cloneElement(child, {
+    ...props,
+    className: [child.props.className, className].filter(Boolean).join(" "),
+    onClick: (event) => {
+      child.props.onClick?.(event);
+      if (!event.defaultPrevented) openModal();
+    },
+  });
 };
 
 export const ModalBody = ({ children }) => {

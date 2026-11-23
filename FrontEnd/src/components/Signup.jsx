@@ -4,9 +4,11 @@ import { Input } from "./Input";
 import { FaEye, FaEyeSlash, FaGoogle } from "react-icons/fa";
 import FloatingDockDesktop from "./FloatingDockDesktop";
 import { useNavigate } from "react-router-dom";
-import { UserContext } from "../context/UserContext.jsx";
+import { UserContext } from "../context/Usercontext.jsx";
 
 import { useGoogleLogin } from "@react-oauth/google";
+
+const hasGoogleClientId = Boolean(import.meta.env.VITE_CLIENT_ID);
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -225,9 +227,10 @@ const Signup = () => {
             <button
               type="button"
               onClick={handleGoogleSignIn}
+              disabled={!hasGoogleClientId}
               className="w-full bg-[#00607A] hover:bg-[#004052]  text-white py-3 rounded-lg transition-colors duration-300 font-semibold flex items-center justify-center"
             >
-              <FaGoogle className="mr-2" /> Continue with Google
+              <FaGoogle className="mr-2" /> {hasGoogleClientId ? "Continue with Google" : "Google sign-in unavailable"}
             </button>
           </form>
 

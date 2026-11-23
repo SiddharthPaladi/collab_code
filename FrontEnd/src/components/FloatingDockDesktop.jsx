@@ -73,11 +73,11 @@ const FloatingDockDesktop = ({ className, visibleItems = {} }) => {
         className
       )}
     >
-      {filteredItems.map((item) => (
-        <IconContainer 
-          mouseX={mouseX} 
-          key={item.title} 
-          {...item} 
+      {filteredItems.map(({ key, ...item }) => (
+        <IconContainer
+          mouseX={mouseX}
+          key={key}
+          {...item}
           navigate={navigate}
         />
       ))}

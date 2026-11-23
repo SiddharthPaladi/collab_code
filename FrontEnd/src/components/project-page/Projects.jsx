@@ -26,7 +26,7 @@ export const HoverEffect = () => {
     try {
       const res = await axios.get("/projects/all");
       console.log("Fetched projects:", res.data);
-      setProjects(res.data);
+      setProjects(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error("Error fetching projects:", err);
     }

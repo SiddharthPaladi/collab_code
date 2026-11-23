@@ -11,10 +11,12 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 
 import { Developers } from "./components/Developers";
 
+const googleClientId = import.meta.env.VITE_CLIENT_ID || "not-configured";
+
 const App = () => {
 
   return (
-    <GoogleOAuthProvider clientId={import.meta.env.VITE_CLIENT_ID} >
+    <GoogleOAuthProvider clientId={googleClientId} >
       
     <Context>
       <Router>

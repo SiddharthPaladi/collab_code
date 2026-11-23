@@ -121,6 +121,7 @@ const FileTreeNode = ({ name, node, currentPath, currentFile, onSelect }) => {
 };
 
 const Editor = () => {
+  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://127.0.0.1:3000";
   const location = useLocation();
   // const [projectData, setProjectData] = useState(location?.state?.projectdata || { name: "My Project" });
   const params = useParams();
@@ -162,7 +163,7 @@ const Editor = () => {
 
   useEffect(() => {
     if (!projectData?._id) return;
-    const wsUrl = import.meta.env.VITE_API_URL.replace(/^http/, 'ws') + '/yjs';
+    const wsUrl = apiBaseUrl.replace(/^http/, 'ws') + '/yjs';
     providerRef.current = new WebsocketProvider(wsUrl, projectData._id, ydocRef.current);
     
     return () => {
@@ -630,7 +631,7 @@ const Editor = () => {
 
   return (
     <div className="font-inter h-screen w-full bg-[#0B172A] select-none overflow-hidden text-slate-300 flex">
-      <PanelGroup orientation="horizontal" autoSaveId="main-layout">
+      <PanelGroup orientation="horizontal">
         
         {/* LEFT SIDEBAR (Explorer) */}
         <Panel defaultSize={15} minSize={10} className="flex flex-col p-1">
