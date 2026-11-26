@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { LampContainer } from './Lamp';
+import { TbArrowUp, TbCopy } from 'react-icons/tb';
 import FloatingDockDesktop from './FloatingDockDesktop';
 
 const DocumentationPage = () => {
@@ -9,24 +9,24 @@ const DocumentationPage = () => {
         {
             id: "overview",
             title: "Overview",
-            content: "Collab Code is a modern messaging application leveraging Socket.io for real-time communication, integrating Gemini AI via Google's Generative AI library, and utilizing the WebContainer API to run code directly in the browser. Users can interact with Gemini AI during conversations by starting their messages with @ai. The application is built using the MERN stack (MongoDB, Express, React, Node.js) alongside additional technologies to ensure seamless functionality."
+            content: "Collab Code is a collaborative coding workspace built on the MERN stack. Teams can edit projects together, run applications in the browser, communicate in real time, and use AI assistance directly alongside their code. It combines project management, a shared editor, terminal access, browser previews, team chat, and an AI coding agent in one environment."
         },
         {
             id: "features",
             title: "Features",
             content: [
-                "Real-time messaging using Socket.io",
-                "AI-powered responses with Gemini AI",
-                "Secure authentication and session management",
-                "Scalable architecture with robust backend and frontend segregation",
-                "Comprehensive input validation and error handling"
+                "Real-time collaborative editing with shared project sessions",
+                "AI-powered coding assistance for questions and file changes",
+                "Browser-based project execution with WebContainer",
+                "Team chat, project management, and member invitations",
+                "Secure authentication and protected project routes"
             ]
         },
         {
             id: "tech-stack",
             title: "Tech Stack",
             content: [
-                "Frontend: React.js with Tailwind CSS and the WebContainer API",
+                "Frontend: React.js, Tailwind CSS, Monaco Editor, Yjs, and WebContainer",
                 "Backend: Node.js, Express.js, NodeGit, Passport",
                 "AI Integration: Google Generative AI (Gemini)",
                 "Database: MongoDB (with Mongoose for ODM)",
@@ -200,6 +200,33 @@ const DocumentationPage = () => {
     ];
 
     const [activeSection, setActiveSection] = useState(sections[0].id);
+    const [copiedCode, setCopiedCode] = useState(null);
+
+    useEffect(() => {
+        const observer = new IntersectionObserver((entries) => {
+            const visible = entries
+                .filter((entry) => entry.isIntersecting)
+                .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+
+            if (visible?.target?.id) {
+                setActiveSection(visible.target.id);
+                window.history.replaceState(null, '', `#${visible.target.id}`);
+            }
+        }, { rootMargin: '-20% 0px -55% 0px', threshold: [0.05, 0.25, 0.5] });
+
+        sections.forEach((section) => {
+            const element = document.getElementById(section.id);
+            if (element) observer.observe(element);
+        });
+
+        return () => observer.disconnect();
+    }, []);
+
+    const copyCode = async (code, key) => {
+        await navigator.clipboard.writeText(code);
+        setCopiedCode(key);
+        window.setTimeout(() => setCopiedCode(null), 1600);
+    };
 
     const scrollToSection = (sectionId) => {
         setActiveSection(sectionId);
@@ -210,80 +237,77 @@ const DocumentationPage = () => {
     };
 
     return (
-        <div className="min-h-screen font-serif bg-gradient-to-br from-[#02091B] to-[#014860] text-white overflow-hidden">
+        <div className="min-h-screen font-sans bg-gradient-to-br from-[#02091B] to-[#014860] text-white">
 
 
             {/* Floating dock */}
             <FloatingDockDesktop
                 visibleItems={{
                     login: true,
-                    signup: true,
+                    // signup: true,
                     home: true,
                     docs: true,
                     team: true,
                     projects: true,
                 }}
-                className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50"
+                variant="bottom"
             />
 
-            {/* Header with lamp effect - Adjusted positioning */}
-            <div className="relative h-screen">
-    <LampContainer className="h-full">
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1 }}
-            className="z-50 flex flex-col items-center px-5 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
-        >
-            <motion.h1
-                initial={{ opacity: 0.5, y: 100 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{
-                    delay: 0.3,
-                    duration: 0.8,
-                    ease: "easeInOut",
-                }}
-                className="bg-gradient-to-br from-slate-100 to-cyan-200 py-4 bg-clip-text text-center text-4xl font-medium tracking-tighter text-transparent md:text-6xl whitespace-nowrap"
-            >
-                Collab Code
-                <br />
-                <span className="text-2xl md:text-4xl">Documentation</span>
-            </motion.h1>
-        </motion.div>
-    </LampContainer>
-</div>
+            {/* Compact documentation header */}
+            <header className="sticky top-0 z-30 border-b border-cyan-800/30 bg-[#02091B]/95 backdrop-blur-md">
+                <div className="container mx-auto px-4 py-8 md:px-8 lg:px-10">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-[0.22em] text-cyan-400">Collab Code</p>
+                    <h1 className="text-3xl font-bold text-slate-100 md:text-4xl">Documentation</h1>
+                </div>
+            </header>
 
-            <div className="container mx-auto px-4 relative">
-                {/* Navigation sidebar */}
-                <div className="lg:flex gap-8">
-                    <div className="w-full lg:w-64 lg:sticky lg:top-8 h-fit mb-8">
-                        <motion.div
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.5 }}
-                            className="bg-[#031A2B]/60 p-4 rounded-lg backdrop-blur-sm border border-cyan-800/30"
+            <div className="container relative mx-auto px-4 py-8 md:px-8 lg:px-10">
+                {/* Mobile contents navigation */}
+                <div className="mb-6 lg:hidden">
+                    <label htmlFor="documentation-section" className="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-400">
+                        Jump to section
+                    </label>
+                    <select
+                        id="documentation-section"
+                        value={activeSection}
+                        onChange={(event) => scrollToSection(event.target.value)}
+                        className="w-full rounded-lg border border-cyan-800/40 bg-[#031A2B] px-3 py-2.5 text-sm text-slate-200 focus:border-cyan-400 focus:outline-none"
+                    >
+                        {sections.map((section) => (
+                            <option key={section.id} value={section.id}>{section.title}</option>
+                        ))}
+                    </select>
+                </div>
+
+                <div className="lg:flex lg:gap-10">
+                    <aside className="hidden h-fit w-64 shrink-0 lg:sticky lg:top-32 lg:block">
+                        <nav
+                            aria-label="Documentation contents"
+                            className="rounded-xl border border-cyan-800/30 bg-[#031A2B]/70 p-4 backdrop-blur-sm"
                         >
-                            <h2 className="text-xl font-bold mb-4 text-cyan-300">Contents</h2>
-                            <ul className="space-y-2">
-                                {sections.map((section) => (
+                            <h2 className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-cyan-300">Contents</h2>
+                            <ul className="space-y-1">
+                                {sections.map((section, index) => (
                                     <li key={section.id}>
                                         <button
                                             onClick={() => scrollToSection(section.id)}
-                                            className={`text-left w-full py-1 px-2 rounded transition-colors ${activeSection === section.id
-                                                    ? "bg-cyan-700/30 text-cyan-200"
-                                                    : "hover:bg-[#031E34] text-slate-300"
+                                            aria-current={activeSection === section.id ? 'location' : undefined}
+                                            className={`flex w-full items-center gap-2 rounded-md border-l-2 px-3 py-2 text-left text-sm transition-colors ${activeSection === section.id
+                                                    ? "border-cyan-400 bg-cyan-500/10 text-cyan-200"
+                                                    : "border-transparent text-slate-400 hover:border-slate-600 hover:bg-slate-800/40 hover:text-slate-200"
                                                 }`}
                                         >
-                                            {section.title}
+                                            <span className="w-5 shrink-0 font-mono text-[10px] opacity-70">{String(index + 1).padStart(2, '0')}</span>
+                                            <span>{section.title}</span>
                                         </button>
                                     </li>
                                 ))}
                             </ul>
-                        </motion.div>
-                    </div>
+                        </nav>
+                    </aside>
 
                     {/* Content */}
-                    <div className="flex-1">
+                    <main className="min-w-0 flex-1">
                         {sections.map((section, index) => (
                             <motion.section
                                 key={section.id}
@@ -291,19 +315,15 @@ const DocumentationPage = () => {
                                 initial={{ opacity: 0, y: 20 }}
                                 whileInView={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.7 }}
-                                className="mb-16"
+                                className="scroll-mt-36 mb-12 rounded-xl border border-cyan-900/30 bg-[#031A2B]/45 px-5 py-6 md:px-7"
                             >
-                                <motion.div
-                                    initial={{ width: 0 }}
-                                    whileInView={{ width: "100%" }}
-                                    transition={{ duration: 1 }}
-                                    className="h-0.5 bg-gradient-to-r from-cyan-600 via-cyan-400 to-transparent mb-4"
-                                />
-
-                                <h2 className="text-3xl font-bold mb-6 text-cyan-300">{section.title}</h2>
+                                <div className="mb-5 flex items-center gap-3">
+                                    <span className="font-mono text-xs text-cyan-500">{String(index + 1).padStart(2, '0')}</span>
+                                    <h2 className="text-2xl font-bold text-cyan-200 md:text-3xl">{section.title}</h2>
+                                </div>
 
                                 {section.content && !Array.isArray(section.content) && (
-                                    <p className="text-slate-300 mb-6 leading-relaxed">{section.content}</p>
+                                    <p className="mb-6 max-w-4xl leading-7 text-slate-300">{section.content}</p>
                                 )}
 
                                 {section.content && Array.isArray(section.content) && (
@@ -315,9 +335,21 @@ const DocumentationPage = () => {
                                 )}
 
                                 {section.codeBlock && (
-                                    <div className="bg-[#031E34] rounded-lg p-4 mb-6 overflow-x-auto">
-                                        <pre className="text-slate-300 font-mono text-sm">
-                                            {section.codeBlock}
+                                    <div className="mb-6 overflow-hidden rounded-lg border border-slate-700/60 bg-[#020B18]">
+                                        <div className="flex items-center justify-between border-b border-slate-700/50 px-3 py-2">
+                                            <span className="text-xs font-medium text-slate-400">Text</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => copyCode(section.codeBlock, `section-${section.id}`)}
+                                                className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs text-slate-400 transition hover:bg-slate-800 hover:text-cyan-300"
+                                                aria-label="Copy code"
+                                            >
+                                                <TbCopy size={14} />
+                                                {copiedCode === `section-${section.id}` ? 'Copied' : 'Copy'}
+                                            </button>
+                                        </div>
+                                        <pre className="overflow-x-auto p-4 text-sm leading-6 text-slate-300">
+                                            <code>{section.codeBlock}</code>
                                         </pre>
                                     </div>
                                 )}
@@ -328,7 +360,7 @@ const DocumentationPage = () => {
                                         <div className="overflow-x-auto">
                                             <table className="w-full border-collapse mb-6">
                                                 <thead>
-                                                    <tr className="bg-[#031E34] border-b border-cyan-800/50">
+                                                    <tr className="border-b border-cyan-800/50 bg-[#031E34]">
                                                         {table.headers.map((header, j) => (
                                                             <th key={j} className="p-3 text-left text-cyan-400">{header}</th>
                                                         ))}
@@ -376,8 +408,11 @@ const DocumentationPage = () => {
                                                         )}
 
                                                         {step.code && (
-                                                            <div className="ml-8 bg-[#031E34] rounded-lg p-3 mb-3 overflow-x-auto">
-                                                                <pre className="text-slate-300 font-mono text-sm whitespace-pre-wrap">
+                                                            <div className="relative ml-8 mb-3 overflow-x-auto rounded-lg border border-slate-700/60 bg-[#020B18] p-3 pr-12">
+                                                                <button type="button" onClick={() => copyCode(step.code, `step-${section.id}-${i}-${j}`)} className="absolute right-2 top-2 rounded p-1.5 text-slate-400 hover:bg-slate-800 hover:text-cyan-300" aria-label="Copy code">
+                                                                    <TbCopy size={14} />
+                                                                </button>
+                                                                <pre className="whitespace-pre-wrap font-mono text-sm text-slate-300">
                                                                     {step.code}
                                                                 </pre>
                                                             </div>
@@ -388,8 +423,11 @@ const DocumentationPage = () => {
                                                         )}
 
                                                         {step.secondCode && (
-                                                            <div className="ml-8 bg-[#031E34] rounded-lg p-3 mb-2 overflow-x-auto">
-                                                                <pre className="text-slate-300 font-mono text-sm whitespace-pre-wrap">
+                                                            <div className="relative ml-8 mb-2 overflow-x-auto rounded-lg border border-slate-700/60 bg-[#020B18] p-3 pr-12">
+                                                                <button type="button" onClick={() => copyCode(step.secondCode, `second-step-${section.id}-${i}-${j}`)} className="absolute right-2 top-2 rounded p-1.5 text-slate-400 hover:bg-slate-800 hover:text-cyan-300" aria-label="Copy code">
+                                                                    <TbCopy size={14} />
+                                                                </button>
+                                                                <pre className="whitespace-pre-wrap font-mono text-sm text-slate-300">
                                                                     {step.secondCode}
                                                                 </pre>
                                                             </div>
@@ -413,8 +451,11 @@ const DocumentationPage = () => {
                                                 </div>
 
                                                 {step.code && (
-                                                    <div className="ml-8 bg-[#031E34] rounded-lg p-3 my-2 overflow-x-auto">
-                                                        <pre className="text-slate-300 font-mono text-sm">
+                                                    <div className="relative ml-8 my-2 overflow-x-auto rounded-lg border border-slate-700/60 bg-[#020B18] p-3 pr-12">
+                                                        <button type="button" onClick={() => copyCode(step.code, `direct-step-${section.id}-${i}`)} className="absolute right-2 top-2 rounded p-1.5 text-slate-400 hover:bg-slate-800 hover:text-cyan-300" aria-label="Copy code">
+                                                            <TbCopy size={14} />
+                                                        </button>
+                                                        <pre className="font-mono text-sm text-slate-300">
                                                             {step.code}
                                                         </pre>
                                                     </div>
@@ -425,16 +466,24 @@ const DocumentationPage = () => {
                                 )}
                             </motion.section>
                         ))}
-                    </div>
+                    </main>
                 </div>
 
                 {/* Footer */}
-                <div className="mt-16 mb-24 pt-8 border-t border-cyan-800/30">
-                    <div className="text-center text-slate-400">
-                        <p>© 2025 Collab Code. All rights reserved.</p>
-                        <p className="mt-2">For questions or feedback, please contact us.</p>
-                    </div>
-                </div>
+                <footer className="mb-24 mt-12 border-t border-cyan-800/30 pt-8 text-center text-slate-400">
+                    <p>© {new Date().getFullYear()} Collab Code. All rights reserved.</p>
+                    <p className="mt-2 text-sm">For questions or feedback, please contact us.</p>
+                </footer>
+
+                <button
+                    type="button"
+                    onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                    aria-label="Back to top"
+                    title="Back to top"
+                    className="fixed bottom-24 right-5 z-40 hidden h-10 w-10 items-center justify-center rounded-full border border-cyan-700/40 bg-slate-950/90 text-cyan-300 shadow-lg backdrop-blur-md transition hover:border-cyan-400 md:flex"
+                >
+                    <TbArrowUp size={18} />
+                </button>
             </div>
         </div>
     );

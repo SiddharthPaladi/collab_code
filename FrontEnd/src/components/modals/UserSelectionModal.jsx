@@ -2,7 +2,7 @@ import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { TbX } from "react-icons/tb";
 
-const UserSelectionModal = ({ isOpen, onClose, users, selectedUsers, setSelectedUsers }) => {
+const UserSelectionModal = ({ isOpen, onClose, users, selectedUsers, setSelectedUsers, projectMembers = [] }) => {
   if (!isOpen) return null;
 
   const toggleUserSelection = (userId) => {
@@ -34,10 +34,30 @@ const UserSelectionModal = ({ isOpen, onClose, users, selectedUsers, setSelected
             <TbX size={24} />
           </button>
 
-          <h2 className="text-2xl font-semibold mb-4 text-center">Select Users</h2>
+          <h2 className="mb-1 text-center text-xl font-semibold">Project Members</h2>
+          <p className="mb-4 text-center text-xs text-slate-400">View existing members or add someone to the project</p>
 
+          {projectMembers.length > 0 && (
+            <div className="mb-5">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Existing members</p>
+              <div className="flex flex-wrap gap-2">
+                {projectMembers.map((member) => (
+                  <div key={member._id} className="flex items-center gap-2 rounded-full border border-slate-700/60 bg-slate-900/70 py-1.5 pl-1.5 pr-3">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 text-xs font-bold text-slate-950">
+                      {(member.firstname || member.email || 'U').charAt(0).toUpperCase()}
+                    </div>
+                    <span className="max-w-28 truncate text-xs font-medium text-slate-200">{member.firstname || member.email}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Add members</p>
           <div className="max-h-64 overflow-y-auto pr-2" style={{ scrollbarWidth: "none" }}>
-            {users.map((user) => (
+            {users.length === 0 ? (
+              <div className="rounded-lg border border-slate-700/50 bg-slate-900/40 p-4 text-center text-sm text-slate-500">Everyone is already in this project</div>
+            ) : users.map((user) => (
               <div
                 key={user._id}
                 className={`flex items-center justify-between p-3 rounded-lg mb-2 cursor-pointer transition ${

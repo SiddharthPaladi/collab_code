@@ -3,12 +3,13 @@ import axios from "../config/axios.js";
 
 import { Input } from "./Input";
 import { FaEye, FaEyeSlash, FaGoogle } from "react-icons/fa";
-import FloatingDockDesktop from "./FloatingDockDesktop";
+// import FloatingDockDesktop from "./FloatingDockDesktop";
 import { useNavigate } from "react-router-dom";
 import { UserContext } from "@/context/Usercontext.jsx";
 
 import { useGoogleLogin } from "@react-oauth/google";
-import { Divide } from "lucide-react";
+import { TiHome } from "react-icons/ti";
+// import { Divide } from "lucide-react";
 
 const hasGoogleClientId = Boolean(import.meta.env.VITE_CLIENT_ID);
 
@@ -108,12 +109,15 @@ const Login = () => {
 
   return (
     <div className="select-none">
-      <FloatingDockDesktop
-        visibleItems={{
-          home: true,
-        }}
-        className="fixed top-15 left-[90%] "
-      />
+      <button
+        type="button"
+        onClick={() => navigate("/")}
+        aria-label="Back to Home"
+        title="Back to Home"
+        className="fixed top-5 left-5 z-[60] h-12 w-12 rounded-xl border border-slate-700/70 bg-slate-950/90 text-slate-200 shadow-xl backdrop-blur-md flex items-center justify-center transition-all hover:border-cyan-400/60 hover:text-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-300"
+      >
+        <TiHome size={24} />
+      </button>
       <div className="bg-gradient-to-br from-[#02091B] to-[#014860] min-h-screen flex items-center justify-center p-4 font-serif">
         <div className="w-full max-w-md rounded-2xl p-8">
           <div className="text-center mb-8">

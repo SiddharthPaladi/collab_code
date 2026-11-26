@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { useState, useEffect, useCallback, useContext } from "react";
+import { motion } from "framer-motion";
 import FloatingDockDesktop from "../FloatingDockDesktop";
 import axios from "../../config/axios.js";
-import { ProjectFormModal } from "@/modals/createfoldermodal/ProjectFormModal";
+// import { ProjectFormModal } from "@/modals/createfoldermodal/ProjectFormModal";
 import {
   Modal,
   ModalBody,
@@ -11,17 +11,17 @@ import {
   ModalTrigger,
   useModal,
 } from "../../modals/createfoldermodal/animated-modal.jsx";
-import {
-  GlowButton,
-  ChevronIcon,
-} from "../../modals/createfoldermodal/glow-button";
+import { GlowButton } from "../../modals/createfoldermodal/glow-button";
+// import { ChevronIcon } from "../../modals/createfoldermodal/glow-button";
 import { useNavigate } from "react-router-dom";
+import { TbPlus } from "react-icons/tb";
+import { UserContext } from "../../context/Usercontext.jsx";
 
 export const HoverEffect = () => {
   const navigate = useNavigate();
+  const { user } = useContext(UserContext);
   const [projects, setProjects] = useState([]);
 
-  const [hoveredIndex, setHoveredIndex] = useState(null);
   const fetchProjects = useCallback(async () => {
     try {
       const res = await axios.get("/projects/all");
@@ -57,76 +57,73 @@ export const HoverEffect = () => {
     }
   };
 
+  const displayName = user?.firstname || user?.name || user?.email?.split('@')[0] || "User";
+
   return (
-    <div className="bg-[#02162A] select-none min-h-screen p-10 relative font-serif">
-      {/* Top left project creation button */}
-      <div className="absolute top-15 left-20 z-30">
-        <Modal>
-          <ModalTrigger>
-            <GlowButton>
-              <span>Create Project</span>
-              <ChevronIcon />
-            </GlowButton>
-          </ModalTrigger>
-
-          <ModalBody>
-            <ModalContent>
-              <h4 className="text-lg md:text-2xl text-neutral-600 dark:text-neutral-100 font-bold text-center mb-8">
-                Create a New{" "}
-                <span className="px-1 py-0.5 rounded-md bg-gray-100 dark:bg-neutral-800 dark:border-neutral-700 border border-gray-200">
-                  Project
-                </span>{" "}
-                ✨
-              </h4>
-
-              <ProjectFormContent fetchProjects={fetchProjects} />
-            </ModalContent>
-
-            <ModalFooter className="gap-4">
-              <CancelButton />
-              {/* Removed the SubmitButton since we're handling submission in the form */}
-            </ModalFooter>
-          </ModalBody>
-        </Modal>
-      </div>
+    <div className="relative min-h-screen select-none bg-[#02091B] px-5 pb-28 pt-6 font-sans text-slate-100 md:px-8 lg:px-12">
+      <header className="mx-auto mb-8 flex max-w-[1440px] items-center justify-between">
+        <div>
+          <p className="mb-1 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-400">Workspace</p>
+          <h1 className="text-2xl font-bold text-slate-100 md:text-3xl">My Projects</h1>
+        </div>
+        <div className="flex items-center gap-3 rounded-full border border-slate-700/60 bg-slate-900/70 py-1.5 pl-1.5 pr-3 shadow-lg">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-cyan-400 to-blue-600 text-sm font-bold text-slate-950">
+            {displayName.charAt(0).toUpperCase()}
+          </div>
+          <div className="hidden sm:block">
+            <p className="max-w-40 truncate text-sm font-semibold text-slate-200">{displayName}</p>
+          </div>
+        </div>
+      </header>
 
       <FloatingDockDesktop
         visibleItems={{
           home: true,
+          docs: true,
+          team: true,
         }}
-        className={`fixed top-15 left-[95%] -translate-x-1/2`}
+        variant="bottom"
       />
 
-      <div
-        className={`grid grid-cols-1 md:grid-cols-2 pt-30 lg:grid-cols-6 py-10 mt-14`}
-      >
-        {projects?.map((item, idx) => (
-          <a
+      <div className="mx-auto grid max-w-[1440px] grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <Modal>
+          <ModalTrigger>
+            <button type="button" className="group flex min-h-52 w-full flex-col items-center justify-center rounded-2xl border border-dashed border-cyan-500/35 bg-cyan-500/[0.04] px-6 text-center transition-all duration-200 hover:-translate-y-1 hover:border-cyan-400/70 hover:bg-cyan-500/[0.08] focus:outline-none focus:ring-2 focus:ring-cyan-400">
+              <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-cyan-400/30 bg-cyan-400/10 text-cyan-300 transition-transform group-hover:scale-105">
+                <TbPlus size={26} />
+              </span>
+              <span className="font-bold text-slate-100">Create Project</span>
+              <span className="mt-1 text-sm text-slate-500">Start a new workspace</span>
+            </button>
+          </ModalTrigger>
+
+          <ModalBody>
+            <ModalContent>
+              <h4 className="mb-8 text-center text-lg font-bold text-slate-100 md:text-2xl">
+                Create a new project
+              </h4>
+              <ProjectFormContent fetchProjects={fetchProjects} />
+            </ModalContent>
+            <ModalFooter className="gap-4">
+              <CancelButton />
+            </ModalFooter>
+          </ModalBody>
+        </Modal>
+
+        {projects?.map((item) => (
+          <button
+            type="button"
             onClick={() => handleProjectClick(item._id)}
             key={item._id}
-            className="relative group block p-2 h-full w-full cursor-pointer"
-            onMouseEnter={() => setHoveredIndex(idx)}
-            onMouseLeave={() => setHoveredIndex(null)}
+            className="group min-h-52 w-full cursor-pointer rounded-2xl text-left outline-none"
           >
-            <AnimatePresence>
-              {hoveredIndex === idx && (
-                <motion.span
-                  className="absolute inset-0 h-full w-full bg-gray-500 dark:bg-slate-800/[0.8] block rounded-3xl"
-                  layoutId="hoverBackground"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1, transition: { duration: 0.15 } }}
-                  exit={{
-                    opacity: 0,
-                    transition: { duration: 0.15, delay: 0.2 },
-                  }}
-                />
-              )}
-            </AnimatePresence>
             <Card>
-              <CardTitle>{item.name}</CardTitle>
-              <CardDescription>{item.description}</CardDescription>
+              <div className="flex h-full flex-col">
+                <CardTitle>{item.name}</CardTitle>
+                <CardDescription>{item.description || "No description provided"}</CardDescription>
+              </div>
             </Card>
-          </a>
+          </button>
         ))}
       </div>
     </div>
@@ -245,21 +242,37 @@ const CancelButton = () => {
   );
 };
 
+// Previous project-card implementation and hover animation, retained for reference:
+// const previousCardHoverAnimation = (
+//   <AnimatePresence>
+//     {hoveredIndex === index && (
+//       <motion.span
+//         className="absolute inset-0 h-full w-full rounded-3xl bg-slate-800/[0.8]"
+//         layoutId="hoverBackground"
+//         initial={{ opacity: 0 }}
+//         animate={{ opacity: 1, transition: { duration: 0.15 } }}
+//         exit={{ opacity: 0, transition: { duration: 0.15, delay: 0.2 } }}
+//       />
+//     )}
+//   </AnimatePresence>
+// );
+//
+// Previous card style: gray project cards with an overlaid hover background,
+// a top-left Create Project glow button, and an irregular 2/6-column grid.
+
 export const Card = ({ className, children }) => {
   return (
     <div
-      className={`rounded-2xl h-full w-full p-4 overflow-hidden bg-gray-600 border border-transparent dark:border-white/[0.2] group-hover:border-slate-700 relative z-20 ${className}`}
+      className={`relative z-20 h-full min-h-52 w-full overflow-hidden rounded-2xl border border-slate-700/70 bg-slate-900/70 p-5 shadow-[0_12px_35px_rgba(2,6,23,0.22)] transition-all duration-200 group-hover:-translate-y-1 group-hover:border-cyan-500/40 group-hover:bg-slate-900 group-hover:shadow-[0_18px_45px_rgba(8,145,178,0.12)] group-focus-visible:border-cyan-400/70 ${className}`}
     >
-      <div className="relative z-50">
-        <div className="p-4">{children}</div>
-      </div>
+      <div className="relative z-50 h-full">{children}</div>
     </div>
   );
 };
 
 export const CardTitle = ({ className, children }) => {
   return (
-    <h4 className={`text-white font-bold tracking-wide mt-4 ${className}`}>
+    <h4 className={`font-bold tracking-wide text-cyan-300 ${className}`}>
       {children}
     </h4>
   );
@@ -268,7 +281,7 @@ export const CardTitle = ({ className, children }) => {
 export const CardDescription = ({ className, children }) => {
   return (
     <p
-      className={`mt-8 text-white tracking-wide leading-relaxed text-sm ${className}`}
+      className={`mt-3 line-clamp-3 leading-6 text-sm text-slate-400 ${className}`}
     >
       {children}
     </p>

@@ -186,13 +186,13 @@ export const Developers = ({ autoplay = false }) => {
       <FloatingDockDesktop
         visibleItems={{
           login: true,
-          signup: true,
+          // signup: true,
           home: true,
           docs: true,
           team: true,
           projects:true,
         }}
-        className="fixed bottom-25 left-1/2 -translate-x-1/2 "
+        variant="bottom"
       />
     </div>
 

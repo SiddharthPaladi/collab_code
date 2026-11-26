@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useContext, useCallback } from "react";
-import { useLocation,useParams } from "react-router-dom";
-import { TbUsers, TbUsersPlus, TbSend, TbX, TbFolder, TbFolderOpen, TbFile, TbPlayerPlay, TbBrowser } from "react-icons/tb";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { TbUsers, TbArrowLeft, TbX, TbFolder, TbFolderOpen, TbFile, TbPlayerPlay, TbBrowser } from "react-icons/tb";
+// import { TbUsersPlus, TbSend } from "react-icons/tb";
 import { DiJavascript1, DiHtml5, DiCss3, DiReact } from "react-icons/di";
 import { VscJson, VscMarkdown } from "react-icons/vsc";
 import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from "react-resizable-panels";
@@ -123,6 +124,7 @@ const FileTreeNode = ({ name, node, currentPath, currentFile, onSelect }) => {
 const Editor = () => {
   const apiBaseUrl = import.meta.env.VITE_API_URL || "http://127.0.0.1:3000";
   const location = useLocation();
+  const navigate = useNavigate();
   // const [projectData, setProjectData] = useState(location?.state?.projectdata || { name: "My Project" });
   const params = useParams();
   const [projectData, setProjectData] = useState(location?.state?.projectdata || null);
@@ -136,6 +138,7 @@ const Editor = () => {
   const [messages, setMessages] = useState([]);
   const messagesEndRef = useRef(null);
   const [webContainer, setWebContainer] = useState(null);
+  const [cursorPosition, setCursorPosition] = useState({ line: 1, column: 1 });
 
   // --- File Tree States ---
   // const [fileTree, setFileTree] = useState({}); // Will be updated from Gemini response
@@ -196,6 +199,9 @@ const Editor = () => {
   const handleEditorMount = (editor, monaco) => {
     editorRef.current = editor;
     bindEditor();
+    editor.onDidChangeCursorPosition((event) => {
+      setCursorPosition({ line: event.position.lineNumber, column: event.position.column });
+    });
 
     // Add Save Shortcut (Cmd+S / Ctrl+S) to seamlessly sync to WebContainer
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, async () => {
@@ -488,6 +494,51 @@ const Editor = () => {
   };
 
   // --- File Tree Helper Functions ---
+  const normalizeExplorerPath = (path) => path
+    .trim()
+    .replace(/\\/g, '/')
+    .replace(/^\/+|\/+$/g, '')
+    .split('/')
+    .filter(Boolean)
+    .join('/');
+
+  const persistFileTree = (nextFileTree) => {
+    fileTreeRef.current = nextFileTree;
+    setFileTree(nextFileTree);
+
+    if (projectData?._id) {
+      axios
+        .put(`/projects/update-filetree/${projectData._id}`, { fileTree: nextFileTree })
+        .catch((err) => console.log(err));
+    }
+
+    webContainer?.mount(buildWebContainerTree(nextFileTree)).catch((err) => console.log(err));
+  };
+
+  const handleCreateFile = () => {
+    const fileName = normalizeExplorerPath(prompt("Enter new file path (e.g., src/app.js):") || "");
+    if (!fileName) return;
+
+    const nextFileTree = {
+      ...fileTreeRef.current,
+      [fileName]: { file: { contents: "" } }
+    };
+    persistFileTree(nextFileTree);
+    setOpenFiles((prev) => prev.includes(fileName) ? prev : [...prev, fileName]);
+    setCurrentFile(fileName);
+  };
+
+  const handleCreateFolder = () => {
+    const folderName = normalizeExplorerPath(prompt("Enter new folder path (e.g., src/components):") || "");
+    if (!folderName) return;
+
+    const nextFileTree = {
+      ...fileTreeRef.current,
+      [folderName]: { directory: {} }
+    };
+    persistFileTree(nextFileTree);
+  };
+
   const handleFileSelect = (fileName) => {
     if (!openFiles.includes(fileName)) {
       setOpenFiles((prev) => [...prev, fileName]);
@@ -637,22 +688,27 @@ const Editor = () => {
         <Panel defaultSize={15} minSize={10} className="flex flex-col p-1">
           <div className="flex-1 bg-slate-800/80 rounded-xl border border-slate-700/50 flex flex-col overflow-hidden shadow-lg">
             <div className="flex justify-between items-center px-4 py-3 border-b border-slate-700/50 bg-slate-800/50">
-              <div className="text-xs font-bold uppercase tracking-wider text-slate-400">Explorer</div>
-              <button 
-                onClick={() => {
-                  const fileName = prompt("Enter new file name (e.g., .env):");
-                  if (fileName) {
-                    setFileTree(prev => ({
-                      ...prev,
-                      [fileName]: { file: { contents: "" } }
-                    }));
-                  }
-                }}
-                className="text-slate-400 hover:text-cyan-400 transition-colors"
-                title="New File"
-              >
-                <TbFile size={16} />
-              </button>
+              <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Explorer</div>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={handleCreateFolder}
+                  className="flex h-7 w-7 items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-700/60 hover:text-cyan-400"
+                  title="New Folder"
+                  aria-label="New Folder"
+                >
+                  <TbFolder size={16} />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCreateFile}
+                  className="flex h-7 w-7 items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-700/60 hover:text-cyan-400"
+                  title="New File"
+                  aria-label="New File"
+                >
+                  <TbFile size={16} />
+                </button>
+              </div>
             </div>
             <div className="flex-1 overflow-y-auto p-2 custom-scrollbar">
               {Object.keys(fileTree).length > 0 ? (
@@ -685,8 +741,13 @@ const Editor = () => {
             <Panel defaultSize={70} minSize={30} className="flex flex-col pb-1">
               <div className="flex-1 bg-slate-800/80 rounded-xl border border-slate-700/50 flex flex-col overflow-hidden shadow-lg relative">
                 {/* Tab Bar with Run Button */}
-                <div className="flex items-center justify-between bg-slate-800/50 h-11 border-b border-slate-700/50 overflow-hidden">
-                  <div className="flex h-full overflow-x-auto custom-scrollbar flex-1">
+                <div className="flex items-center justify-between bg-slate-800/50 h-12 border-b border-slate-700/50 overflow-hidden">
+                  <div className="flex h-full min-w-0 overflow-x-auto custom-scrollbar flex-1">
+                    {projectData?.name && (
+                      <div className="flex h-full shrink-0 items-center border-r border-slate-700/50 px-4">
+                        <span className="max-w-72 truncate text-base font-semibold tracking-wide text-slate-100 md:text-lg">{projectData.name}</span>
+                      </div>
+                    )}
                     {openFiles.map((file, index) => (
                       <div 
                         key={index} 
@@ -709,7 +770,7 @@ const Editor = () => {
                     ))}
                   </div>
                   {/* Action Buttons */}
-                  <div className="flex items-center space-x-2 px-4 h-full border-l border-slate-700/50 bg-slate-800/50">
+                  <div className="flex items-center space-x-2 px-3 h-full border-l border-slate-700/50 bg-slate-800/50">
                     <button 
                       onClick={() => setIsIframeModalOpen(true)}
                       className={`flex items-center space-x-2 px-3 py-1.5 rounded-md transition-colors shadow-md ${iframeUrl ? 'bg-indigo-600 hover:bg-indigo-500 text-white' : 'bg-slate-700 text-slate-400 cursor-not-allowed'}`}
@@ -757,6 +818,18 @@ const Editor = () => {
                     </div>
                   )}
                 </div>
+                {currentFile && (
+                  <div className="flex h-6 items-center justify-between border-t border-slate-700/40 bg-slate-800/80 px-3 text-[10px] text-slate-500">
+                    <div className="flex items-center gap-3">
+                      <span>Ln {cursorPosition.line}, Col {cursorPosition.column}</span>
+                      <span>Spaces: 2</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span>UTF-8</span>
+                      <span className="text-cyan-400">Connected</span>
+                    </div>
+                  </div>
+                )}
               </div>
             </Panel>
 
@@ -767,8 +840,11 @@ const Editor = () => {
             {/* Terminal Bottom */}
             <Panel defaultSize={30} minSize={10} className="flex flex-col pt-1">
               <div className="flex-1 bg-slate-900 rounded-xl border border-slate-700/50 flex flex-col overflow-hidden shadow-lg">
-                <div className="h-9 flex items-center px-4 bg-slate-800/80 border-b border-slate-700/50 text-xs font-bold uppercase tracking-wider text-slate-400">
-                  Terminal
+                <div className="h-9 flex items-center justify-between px-4 bg-slate-800/80 border-b border-slate-700/50 text-xs font-bold uppercase tracking-wider text-slate-400">
+                  <span>Terminal</span>
+                  <span className="flex items-center gap-1.5 text-[10px] font-medium normal-case tracking-normal text-slate-500">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400/80" /> Shell ready
+                  </span>
                 </div>
                 <div className="flex-1 overflow-hidden p-2">
                   <Terminal ref={terminalRef} onTerminalReady={(term) => {
@@ -790,30 +866,25 @@ const Editor = () => {
           <div className="flex-1 bg-slate-800/80 rounded-xl border border-slate-700/50 flex flex-col overflow-hidden shadow-lg relative">
             <div className="flex justify-between items-center px-4 py-3 border-b border-slate-700/50 bg-slate-800/50">
               <div className="text-xs font-bold uppercase tracking-wider text-slate-400">Team Chat</div>
-              <span className="flex space-x-3">
-                <button onClick={() => setSidebarOpen(true)} className="text-slate-400 hover:text-cyan-400 transition-colors">
-                  <TbUsers size={18} />
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setIsModalOpen(true)}
+                  className="flex h-9 items-center gap-2 rounded-lg border border-slate-700/60 bg-slate-900/40 px-2.5 text-slate-400 transition hover:border-cyan-500/40 hover:text-cyan-300"
+                  title="View and add project members"
+                >
+                  <TbUsers size={19} />
+                  <span className="text-xs font-semibold">{projectData?.users?.length || 0}</span>
                 </button>
-                <button onClick={() => setIsModalOpen(true)} className="text-slate-400 hover:text-cyan-400 transition-colors">
-                  <TbUsersPlus size={18} />
+                <button
+                  type="button"
+                  onClick={() => navigate('/projects')}
+                  className="flex h-9 items-center gap-2 rounded-lg border border-slate-700/60 bg-slate-900/40 px-2.5 text-slate-400 transition hover:border-cyan-500/40 hover:text-cyan-300"
+                  title="Back to Projects"
+                  aria-label="Back to Projects"
+                >
+                  <TbArrowLeft size={18} />
                 </button>
-              </span>
-              
-              <Sidebar open={sidebarOpen} setOpen={setSidebarOpen}>
-                <div className="text-sm font-semibold text-slate-200 mb-4 border-b border-slate-700 pb-2">Project Members</div>
-                <div className="space-y-2">
-                  {projectData?.users?.map((usr, index) => (
-                    <div key={index} className="flex items-center gap-2 p-2 hover:bg-slate-700/50 rounded-md transition-colors">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-600 to-teal-500 flex items-center justify-center text-white font-bold text-sm shadow-md">
-                        {usr.firstname[0]}
-                      </div>
-                      <div>
-                        <div className="text-slate-300 text-sm font-medium">{usr.firstname}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </Sidebar>
+              </div>
             </div>
             
             <Chat
@@ -842,6 +913,7 @@ const Editor = () => {
         users={users}
         selectedUsers={selectedUsers}
         setSelectedUsers={setSelectedUsers}
+        projectMembers={projectData?.users || []}
       />
 
       {/* Browser Preview Modal */}

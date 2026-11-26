@@ -3,8 +3,9 @@ import { motion, stagger, useAnimate, useInView } from "framer-motion";
 import { cn } from "../lib/utils";
 import { useEffect } from "react";
 
+// Retained for possible reuse; no longer imported or rendered by the current home page.
 export const TypewriterEffect = ({ words, className, cursorClassName }) => {
-  // split text inside of words into array of characters
+  // split text inside of words into characters
   const wordsArray = words.map((word) => {
     return {
       ...word,
@@ -31,7 +32,7 @@ export const TypewriterEffect = ({ words, className, cursorClassName }) => {
         }
       );
     }
-  }, [isInView]);
+  }, [isInView, animate]);
 
   const renderWords = () => {
     return (
@@ -48,7 +49,7 @@ export const TypewriterEffect = ({ words, className, cursorClassName }) => {
                   {char}
                 </motion.span>
               ))}
-              <span>&nbsp;</span> {/* This ensures spacing between words */}
+              <span>&nbsp;</span>
             </div>
           );
         })}
@@ -65,12 +66,8 @@ export const TypewriterEffect = ({ words, className, cursorClassName }) => {
     >
       {renderWords()}
       <motion.span
-        initial={{
-          opacity: 0,
-        }}
-        animate={{
-          opacity: 1,
-        }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
         transition={{
           duration: 0.8,
           repeat: Infinity,
@@ -80,7 +77,7 @@ export const TypewriterEffect = ({ words, className, cursorClassName }) => {
           "inline-block rounded-sm w-[4px] h-4 md:h-6 lg:h-10 bg-blue-500",
           cursorClassName
         )}
-      ></motion.span>
+      />
     </div>
   );
 };
@@ -90,7 +87,6 @@ export const TypewriterEffectSmooth = ({
   className,
   cursorClassName,
 }) => {
-  // split text inside of words into array of characters
   const wordsArray = words.map((word) => {
     return {
       ...word,
@@ -112,6 +108,7 @@ export const TypewriterEffectSmooth = ({
                   {char}
                 </span>
               ))}
+              <span>&nbsp;</span>
             </div>
           );
         })}
@@ -123,12 +120,8 @@ export const TypewriterEffectSmooth = ({
     <div className={cn("flex space-x-1 my-6", className)}>
       <motion.div
         className="overflow-hidden pb-2"
-        initial={{
-          width: "0%",
-        }}
-        whileInView={{
-          width: "fit-content",
-        }}
+        initial={{ width: "0%" }}
+        whileInView={{ width: "fit-content" }}
         transition={{
           duration: 2,
           ease: "linear",
@@ -137,20 +130,14 @@ export const TypewriterEffectSmooth = ({
       >
         <div
           className="text-xs sm:text-base md:text-xl lg:text:3xl xl:text-5xl font-bold"
-          style={{
-            whiteSpace: "nowrap",
-          }}
+          style={{ whiteSpace: "nowrap" }}
         >
           {renderWords()}{" "}
-        </div>{" "}
+        </div>
       </motion.div>
       <motion.span
-        initial={{
-          opacity: 0,
-        }}
-        animate={{
-          opacity: 1,
-        }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
         transition={{
           duration: 0.8,
           repeat: Infinity,
@@ -160,7 +147,7 @@ export const TypewriterEffectSmooth = ({
           "block rounded-sm w-[4px] h-4 sm:h-6 xl:h-12 bg-blue-500",
           cursorClassName
         )}
-      ></motion.span>
+      />
     </div>
   );
 };

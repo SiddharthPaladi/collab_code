@@ -1,6 +1,4 @@
 import React, { useRef, useEffect, useState } from 'react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import Message from './Message';
 import PlaceholdersAndVanishInput from './PlaceholdersAndVanishInput';
 import TracingBeam from './TracingBeam';
@@ -85,10 +83,7 @@ const Chat = ({
   };
 
   const placeholders = [
-    "Type / for commands (/clearTheCode, /ExplainTheCode)...",
-    "Type @ai to let the agent modify your files...",
-    "Ask CollabCode AI to explain the code...",
-    "Add a new login endpoint...",
+    "Message the team — use @ai to ask CollabCode AI",
   ];
 
   // Dynamic status details
@@ -139,16 +134,8 @@ const Chat = ({
   return (
     <div className="flex flex-col h-full bg-slate-900 rounded-b-xl md:rounded-r-xl overflow-hidden shadow-2xl border-l border-slate-700/50 relative">
       
-      {/* Header */}
-      <div className="bg-slate-800 p-4 border-b border-slate-700/50 flex justify-between items-center z-10 shadow-sm h-14">
-        <div className="flex items-center space-x-2">
-          <div className="w-2.5 h-2.5 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,211,238,0.6)]" />
-          <h2 className="text-white font-bold tracking-wider text-sm">CollabCode Chat</h2>
-        </div>
-      </div>
-
       {/* Messages Area */}
-      <div className="flex-1 p-3 overflow-y-auto space-y-4 custom-scrollbar relative z-0">
+      <div className="flex-1 p-3 overflow-y-auto custom-scrollbar relative z-0">
         <TracingBeam>
           {messages.map((msg) => {
             const isAI = msg.sender?.email === 'AI@ai.com' || msg.email === 'AI@ai.com';
@@ -163,36 +150,20 @@ const Chat = ({
             }
 
             return (
-              <div key={msg._id} className="mb-4">
-                {isAI ? (
-                  <div className="flex flex-col bg-slate-800/80 rounded-lg p-4 border border-cyan-900/30 shadow-md mr-4 ml-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-6 h-6 rounded-full bg-cyan-900/50 border border-cyan-500/50 flex items-center justify-center text-cyan-300 text-xs font-bold">
-                        AI
-                      </div>
-                      <span className="text-cyan-300 text-xs font-semibold tracking-wide">CollabCode Agent</span>
-                      <span className="text-slate-500 text-[10px] ml-auto">{msg.timestamp || msg.createdAt}</span>
-                    </div>
-                    <div className="text-slate-200 text-sm prose prose-invert prose-pre:bg-slate-900 prose-pre:border prose-pre:border-slate-700/50 max-w-none">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {rawContent}
-                      </ReactMarkdown>
-                    </div>
-                  </div>
-                ) : (
-                  <Message
-                    message={msg}
-                    sender={msg.sender?.email || msg.email}
-                    content={msg.message}
-                    timestamp={msg.timestamp || msg.createdAt}
-                    userEmail={user.email}
-                    openMenuId={openMenuId}
-                    setOpenMenuId={setOpenMenuId}
-                    onDelete={handleDeleteMessage}
-                    onEdit={handleEditMessage}
-                  />
-                )}
-              </div>
+              <Message
+                key={msg._id}
+                message={msg}
+                sender={isAI ? 'CollabCode Agent' : (msg.sender?.email || msg.email)}
+                content={isAI ? rawContent : msg.message}
+                timestamp={msg.timestamp || msg.createdAt}
+                createdAt={msg.createdAt}
+                userEmail={user.email}
+                openMenuId={openMenuId}
+                setOpenMenuId={setOpenMenuId}
+                onDelete={handleDeleteMessage}
+                onEdit={handleEditMessage}
+                isAI={isAI}
+              />
             );
           })}
 
@@ -237,7 +208,7 @@ const Chat = ({
       </div>
 
       {/* Input Area with Slash Commands Menu */}
-      <div className="p-3 border-t border-slate-700/50 bg-slate-800/90 flex flex-col relative z-10 shadow-[0_-5px_15px_rgba(0,0,0,0.2)]">
+      <div className="p-3 border-t border-slate-700/50 bg-slate-900/95 flex flex-col relative z-10">
         
         {/* Slash Command Popup Dropdown */}
         {showSlashMenu && filteredCommands.length > 0 && (

@@ -1,14 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { FiEdit3, FiTrash2, FiCopy, FiX } from 'react-icons/fi';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { FiEdit3, FiCopy, FiX } from 'react-icons/fi';
 
 const Message = ({
   message,
   sender,
   content,
   timestamp,
+  createdAt,
   userEmail,
   onDelete,
-  onEdit
+  onEdit,
+  isAI = false,
+  aiName = 'CollabCode Agent'
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(content);
@@ -17,7 +22,38 @@ const Message = ({
   const messageRef = useRef(null);
   const editTextareaRef = useRef(null);
 
-  const isSender = sender === userEmail;
+  const isSender = !isAI && sender === userEmail;
+
+  const formatTimestamp = (value, fallbackCreatedAt) => {
+    if (fallbackCreatedAt) {
+      const createdDate = new Date(fallbackCreatedAt);
+      if (!Number.isNaN(createdDate.getTime())) {
+        return createdDate.toLocaleString([], {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      }
+    }
+
+    if (!value) return '';
+    if (typeof value === 'string' && value.includes(',')) return value;
+
+    const date = new Date(value);
+    if (!Number.isNaN(date.getTime())) {
+      return date.toLocaleString([], {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+
+    return value;
+  };
 
   // Handle outside click to close context menu
   useEffect(() => {
@@ -63,34 +99,36 @@ const Message = ({
     setShowContextMenu(false);
   };
 
+  const rawSender = isAI ? aiName : (sender || 'User');
+  const displayName = isAI
+    ? aiName
+    : rawSender.includes('@')
+      ? rawSender.split('@')[0]
+      : rawSender;
+
   return (
-    <div 
+    <div
       ref={messageRef}
       onContextMenu={handleContextMenu}
-      className={`
-        relative flex ${isSender ? 'justify-end' : 'justify-start'} 
-        mb-4 group
-      `}
+      className="relative mb-3 flex justify-start group"
     >
-      {/* Message Container */}
-      <div 
-        className={`
-          relative max-w-[75%] w-full p-3 rounded-2xl shadow-md border
-          ${isSender 
-            ? 'bg-teal-600 border-teal-500 text-white rounded-tr-sm' 
-            : 'bg-slate-700/80 border-slate-600/50 text-slate-200 rounded-tl-sm'}
-          transition-all duration-300
-        `}
-        style={{ minWidth: "100px" }}
-      >
-        {/* Sender Name */}
-        <div className="flex justify-between items-center mb-2">
-          <span className={`
-            text-xs font-bold tracking-wide
-            ${isSender ? 'text-teal-200' : 'text-slate-400'}
-          `}>
-            {sender}
+      <div className="relative w-full rounded-xl border border-cyan-900/30 bg-slate-800/80 px-4 py-3.5 shadow-md">
+        <div className="mb-3 flex items-center gap-2.5">
+          <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-[11px] font-bold ${
+            isAI
+              ? 'border-cyan-500/50 bg-cyan-900/50 text-cyan-300'
+              : 'border-slate-600/60 bg-slate-900/70 text-cyan-300'
+          }`}>
+            {isAI ? 'AI' : displayName.charAt(0).toUpperCase()}
+          </div>
+          <span className="text-xs font-semibold tracking-wide text-cyan-300">
+            {displayName}
           </span>
+          {timestamp && (
+            <span className="ml-auto whitespace-nowrap text-[10px] font-medium text-slate-500">
+              {formatTimestamp(timestamp, createdAt)}
+            </span>
+          )}
         </div>
 
         {/* Message Content */}
@@ -106,7 +144,7 @@ const Message = ({
               className={`
                 w-full p-2 rounded-lg 
                 ${isSender 
-                  ? 'bg-teal-700/70 text-white border border-teal-500/50' 
+                  ? 'bg-slate-900/80 text-slate-100 border border-cyan-700/50' 
                   : 'bg-slate-800/70 text-slate-200 border border-slate-600/50'}
                 focus:outline-none
                 resize-none
@@ -129,17 +167,14 @@ const Message = ({
               }
             `}</style>
           </div>
+        ) : isAI ? (
+          <div className="max-w-none text-sm leading-6 text-slate-200 prose prose-invert prose-pre:border prose-pre:border-slate-700/50 prose-pre:bg-slate-900">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+          </div>
         ) : (
-          <p className="text-sm break-words">{content}</p>
+          <p className="break-words text-sm leading-6 text-slate-200">{content}</p>
         )}
 
-        {/* Timestamp */}
-        <div className={`
-          text-right text-[10px] uppercase font-bold opacity-80 mt-2
-          ${isSender ? 'text-teal-200' : 'text-slate-400'}
-        `}>
-          {timestamp?.split(',')[1]}
-        </div>
       </div>
 
       {/* Context Menu */}

@@ -187,8 +187,8 @@ const PlaceholdersAndVanishInput = ({ value: externalValue, placeholders, onChan
   return (
     <form
       className={cn(
-        "w-full relative bg-gray-800/50 min-h-[48px] rounded-3xl overflow-hidden shadow-lg transition duration-200",
-        value && "bg-gray-700/70"
+        "w-full relative bg-slate-900/80 min-h-[52px] rounded-xl overflow-hidden border border-slate-700/70 shadow-inner transition duration-200",
+        value && "border-cyan-700/50 bg-slate-900"
       )}
       onSubmit={handleSubmit}
     >
@@ -217,24 +217,24 @@ const PlaceholdersAndVanishInput = ({ value: externalValue, placeholders, onChan
         ref={(el) => {
           inputRef.current = el;
           if (el && !value) {
-            el.style.height = '48px'; // reset height when empty
+            el.style.height = '52px'; // reset height when empty
           }
         }}
         value={value}
         rows={1}
         className={cn(
-          "w-full relative text-base z-50 border-none text-gray-100 bg-transparent min-h-[48px] max-h-[200px] resize-none focus:outline-none focus:ring-0 pl-4 pr-14 py-3 font-inter custom-scrollbar",
+          "w-full relative text-sm z-50 border-none text-slate-100 bg-transparent min-h-[52px] max-h-[200px] resize-none focus:outline-none focus:ring-0 pl-4 pr-14 py-3.5 font-inter custom-scrollbar",
           animating && "text-transparent"
         )}
       />
       <button
         disabled={!value}
         type="submit"
-        className="absolute right-2 bottom-2 z-50 h-8 w-8 rounded-full disabled:bg-gray-700 bg-cyan-600 disabled:opacity-50 transition duration-200 flex items-center justify-center"
+        className="absolute right-2.5 bottom-2.5 z-50 h-9 w-9 rounded-lg disabled:bg-slate-800 disabled:border disabled:border-slate-700 bg-cyan-500 text-slate-950 disabled:text-slate-600 disabled:opacity-60 transition duration-200 flex items-center justify-center hover:bg-cyan-400"
       >
-        <TbSend className="text-white h-4 w-4" />
+        <TbSend className="h-4 w-4" />
       </button>
-      <div className="absolute inset-0 flex items-center h-[48px] rounded-full pointer-events-none">
+      <div className="absolute inset-0 flex items-center h-[52px] rounded-xl pointer-events-none">
         <AnimatePresence mode="wait">
           {!value && (
             <motion.p
@@ -243,7 +243,7 @@ const PlaceholdersAndVanishInput = ({ value: externalValue, placeholders, onChan
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: -15, opacity: 0 }}
               transition={{ duration: 0.3, ease: "linear" }}
-              className="text-gray-400 text-base font-inter pl-4 text-left w-[calc(100%-2rem)] truncate"
+              className="text-slate-500 text-sm font-inter pl-4 text-left w-[calc(100%-4rem)] truncate"
             >
               {placeholders[currentPlaceholder]}
             </motion.p>
